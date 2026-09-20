@@ -1,0 +1,58 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.WYRE-AI/gorelo-mcp",
+  "title": "Gorelo",
+  "description": "MCP server for Gorelo's PSA ticket, client, contact, contract, asset, and time-tracking APIs.",
+  "repository": {
+    "url": "https://github.com/WYRE-AI/gorelo-mcp",
+    "source": "github"
+  },
+  "version": "0.0.0",
+  "websiteUrl": "https://github.com/WYRE-AI/gorelo-mcp",
+  "packages": [
+    {
+      "registryType": "oci",
+      "identifier": "ghcr.io/wyre-ai/gorelo-mcp:0.0.0",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "GORELO_API_KEY",
+          "description": "Gorelo Public API key for the tenant, sent as the X-API-Key header.",
+          "isRequired": true,
+          "isSecret": true,
+          "format": "string"
+        },
+        {
+          "name": "GORELO_REGION",
+          "description": "Gorelo regional API host: us (default) or au.",
+          "isRequired": false,
+          "default": "us",
+          "format": "string"
+        },
+        {
+          "name": "MCP_TRANSPORT",
+          "description": "Transport mode for the server. Set to 'stdio' for local CLI use; the image defaults to 'http' for gateway hosting.",
+          "isRequired": false,
+          "default": "stdio",
+          "format": "string"
+        },
+        {
+          "name": "AUTH_MODE",
+          "description": "Credential source: 'env' reads vars locally, 'gateway' expects header injection from the WYRE MCP Gateway.",
+          "isRequired": false,
+          "default": "env",
+          "format": "string"
+        },
+        {
+          "name": "LOG_LEVEL",
+          "description": "Log verbosity: debug, info, warn, error",
+          "isRequired": false,
+          "default": "info",
+          "format": "string"
+        }
+      ]
+    }
+  ]
+}
