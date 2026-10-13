@@ -28,7 +28,7 @@ Copy [`.env.example`](.env.example) and set the variables below.
 
 With `MCP_TRANSPORT=http` and `CONDUIT_S2S_SECRET` set, every `/mcp` request must include `X-Gateway-S2S`. The value is `t=<unix seconds>,v1=<hex hmac-sha256>`, where the HMAC is SHA-256 over the literal string `t=<unix seconds>` using `CONDUIT_S2S_SECRET` as the key. A missing or invalid header returns 401. The proof is valid for five minutes of clock skew.
 
-In `AUTH_MODE=gateway`, `/mcp` also requires `X-Gorelo-Api-Key` (`X-Gorelo-Region` is optional, `us` or `au`). That header is the only credential source for the request. A missing key returns 401 and does not fall back to `GORELO_API_KEY`.
+In `AUTH_MODE=gateway`, `/mcp` also requires `X-Gorelo-Api-Key`. `X-Gorelo-Region` is optional; when present it must be exactly `us` or `au`, and any other value returns 400. The API key header is the only credential source for the request. A missing key returns 401 and does not fall back to `GORELO_API_KEY`.
 
 ```http
 POST /mcp HTTP/1.1

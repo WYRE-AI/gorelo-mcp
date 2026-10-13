@@ -5,6 +5,7 @@
  * Known placeholders never count. /mcp rejects a missing or invalid
  * X-Gateway-S2S header. AUTH_MODE=gateway rejects requests that omit
  * x-gorelo-api-key and must not fall back to GORELO_API_KEY.
+ * x-gorelo-region, when present, must be us or au.
  */
 
 import { createHmac } from 'node:crypto';
@@ -434,6 +435,70 @@ describe('HTTP /mcp authentication', () => {
     } finally {
       logs.restore();
     }
+  });
+
+  it('returns 400 for an unknown x-gorelo-region and does not call the vendor API', async () => {
+    const credsSpy = vi.spyOn(client, 'getCredentials');
+    const server = await listen();
+    const response = await sendHttp({
+      port: server.port,
+      method: 'POST',
+      path: '/mcp',
+      headers: mcpHeaders({
+        'x-gateway-s2s': mintS2sHeader(S2S_SECRET),
+        'x-gorelo-api-key': HEADER_API_KEY,
+        'x-gorelo-region': 'eu',
+      }),
+      body: groupsCall,
+    });
+
+    expect(response.status).toBe(400);
+    const body = JSON.parse(response.body) as { error?: string };
+    expect(body.error).toBe('Invalid x-gorelo-region: expected us or au');
+    assertNoSecrets(response.body);
+    expect(credsSpy).not.toHaveBeenCalled();
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('returns 400 for a region that is not exactly us or au', async () => {
+    const server = await listen();
+    for (const region of ['US', 'AU', 'usa', 'eu']) {
+      const response = await sendHttp({
+        port: server.port,
+        method: 'POST',
+        path: '/mcp',
+        headers: mcpHeaders({
+          'x-gateway-s2s': mintS2sHeader(S2S_SECRET),
+          'x-gorelo-api-key': HEADER_API_KEY,
+          'x-gorelo-region': region,
+        }),
+        body: groupsCall,
+      });
+      expect(response.status, `region ${JSON.stringify(region)}`).toBe(400);
+      assertNoSecrets(response.body);
+    }
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('accepts a signed gateway request that omits x-gorelo-region and uses the US host', async () => {
+    const server = await listen();
+    const response = await sendHttp({
+      port: server.port,
+      method: 'POST',
+      path: '/mcp',
+      headers: mcpHeaders({
+        'x-gateway-s2s': mintS2sHeader(S2S_SECRET),
+        'x-gorelo-api-key': HEADER_API_KEY,
+      }),
+      body: groupsCall,
+    });
+
+    expect(response.status).toBe(200);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [url, init] = fetchMock.mock.calls[0] as [string, { headers: Record<string, string> }];
+    expect(url).toBe('https://api.usw.gorelo.io/v1/organization/groups');
+    expect(init.headers['X-API-Key']).toBe(HEADER_API_KEY);
+    assertNoSecrets(response.body);
   });
 
   it('serves /health without authentication and without returning credentials', async () => {

@@ -53,6 +53,14 @@ const GATEWAY_CREDENTIALS_UNAUTHORIZED = {
   error: 'Unauthorized: missing required gateway credential header x-gorelo-api-key',
 };
 
+const INVALID_REGION = {
+  error: 'Invalid x-gorelo-region: expected us or au',
+};
+
+function isGoreloRegion(value: string): value is GoreloRegion {
+  return value === 'us' || value === 'au';
+}
+
 function headerValue(value: string | string[] | undefined): string | undefined {
   const raw = Array.isArray(value) ? value[0] : value;
   return typeof raw === 'string' && raw.length > 0 ? raw : undefined;
@@ -175,7 +183,9 @@ export async function startHttpServer(): Promise<HttpServer> {
     // x-gorelo-api-key. Reject explicitly if it is missing rather than
     // falling through. Falling through would resolve GORELO_API_KEY from
     // the process environment, which is not request-scoped (CWE-306).
-    // x-gorelo-region is optional.
+    // x-gorelo-region is optional. When present it must be us or au.
+    // Anything else is rejected before credentials are applied, so an
+    // unknown value cannot fall through to the US host.
     if (isGatewayMode) {
       const apiKey = headerValue(req.headers['x-gorelo-api-key']);
       if (!apiKey) {
@@ -184,7 +194,12 @@ export async function startHttpServer(): Promise<HttpServer> {
         return;
       }
       const region = headerValue(req.headers['x-gorelo-region']);
-      await runWithCredentials({ apiKey, region: region as GoreloRegion | undefined }, handle);
+      if (region !== undefined && !isGoreloRegion(region)) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(INVALID_REGION));
+        return;
+      }
+      await runWithCredentials({ apiKey, region }, handle);
       return;
     }
 
