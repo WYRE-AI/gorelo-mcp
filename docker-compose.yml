@@ -1,0 +1,23 @@
+services:
+  # Gateway mode. The Gorelo API key arrives per request on x-gorelo-api-key.
+  # Do not set GORELO_API_KEY or env_file here. That would put a static vendor
+  # credential in the container. The project .env is used only for Compose
+  # interpolation. For AUTH_MODE=env, pass GORELO_API_KEY on that process
+  # instead (see the README).
+  gorelo-mcp:
+    build: .
+    ports:
+      - "127.0.0.1:8080:8080"
+    environment:
+      - MCP_TRANSPORT=http
+      - MCP_HTTP_PORT=8080
+      - MCP_HTTP_HOST=0.0.0.0
+      - AUTH_MODE=gateway
+      - CONDUIT_S2S_SECRET=${CONDUIT_S2S_SECRET:?set CONDUIT_S2S_SECRET}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s

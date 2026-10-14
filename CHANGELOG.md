@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+- HTTP startup rejects an empty or known-placeholder `CONDUIT_S2S_SECRET`. `MCP_ALLOW_INSECURE_DEV=1` is the only bypass, skips `X-Gateway-S2S`, and binds `127.0.0.1` only.
+- `AUTH_MODE=gateway` requires `X-Gorelo-Api-Key` on each `/mcp` request and does not fall back to `GORELO_API_KEY`.
+- `X-Gorelo-Region` accepts only `us` or `au`. Any other value returns 400 and is not sent to a regional API host.
+
 ### Added
 - Initial release: MCP server for Gorelo's PSA REST API.
 - Ticket tools: `gorelo_list_tickets`, `gorelo_get_ticket`, `gorelo_list_ticket_statuses`, `gorelo_list_ticket_tags`, `gorelo_list_ticket_types`, `gorelo_list_ticket_comments`, `gorelo_get_ticket_comment`, `gorelo_list_ticket_conversations`, `gorelo_get_ticket_approval`.
