@@ -1,6 +1,6 @@
 # Gorelo MCP Server
 
-MCP server for [Gorelo](https://gorelo.io)'s PSA (Professional Services Automation) REST API - full Public API coverage (tickets, clients, contacts, assets, billing, projects, documents, alerts, and more) - for AI assistants and the WYRE Conduit gateway.
+MCP server for [Gorelo](https://gorelo.io)'s PSA (Professional Services Automation) REST API - every supported operation in the Gorelo Public API (tickets, clients, contacts, assets, billing, projects, documents, alerts, and more) - for AI assistants and the WYRE Conduit gateway. Five operations are permanently excluded: three binary/PDF downloads, plus API-key creation and deletion (see [Exclusions](#exclusions)).
 
 ## Authentication
 
@@ -227,13 +227,13 @@ Request bodies are passed under a single `body` argument (the JSON object Gorelo
 
 ### tools/list size
 
-Measured as the JSON size of the `tools/list` result (names, descriptions, input schemas, annotations):
+Measured as the JSON size of the `tools/list` result (names, descriptions, input schemas, annotations), re-measured 2026-10-20 on v1.1.0 after the reviewed descriptions:
 
 | Configuration | Tools | Bytes |
 |---|---|---|
-| `GORELO_PRESET=readonly` | 58 | 39,718 |
-| default (read + write, no billing writes) | 90 | 87,530 |
-| `GORELO_ENABLE_DESTRUCTIVE=true` + `GORELO_ENABLE_BILLING_WRITES=true` (everything) | 112 | 102,064 |
+| `GORELO_PRESET=readonly` | 58 | 39,720 |
+| default (read + write, no billing writes) | 90 | 87,932 |
+| `GORELO_ENABLE_DESTRUCTIVE=true` + `GORELO_ENABLE_BILLING_WRITES=true` (everything) | 112 | 103,584 |
 
 Use a preset or `GORELO_TOOLS_INCLUDE` to shrink the list for clients with tight context budgets.
 
