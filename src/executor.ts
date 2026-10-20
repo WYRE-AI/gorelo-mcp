@@ -173,8 +173,24 @@ export async function executeTool(
       await sleep(Math.min(retryAfter ?? 1000 * 2 ** attempt, MAX_BACKOFF_MS));
       continue;
     }
-    const text = await res.text().catch(() => '');
-    if (!res.ok) throw failure(tool, res.status, text);
+    if (!res.ok) {
+      // The status is already known to be an error; a failed body read only
+      // loses the detail, never turns the call into a success.
+      const errText = await res.text().catch(() => '');
+      throw failure(tool, res.status, errText);
+    }
+    // On a 2xx a body-read failure (timeout, reset) must surface as an error,
+    // not as an empty "successful" result.
+    let text: string;
+    try {
+      text = await res.text();
+    } catch (err) {
+      const reason = err instanceof Error ? err.message : String(err);
+      throw new GoreloApiError(
+        `Gorelo ${tool.method} ${tool.name} returned HTTP ${res.status} but the response body could not be read: ${reason.slice(0, 200)}`,
+        res.status
+      );
+    }
     return renderBody(text, res.status);
   }
 }

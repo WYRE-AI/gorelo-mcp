@@ -75,6 +75,18 @@ describe('requests', () => {
 });
 
 describe('errors', () => {
+  it('a body-read failure after a 2xx is an error, not an empty success', async () => {
+    const broken = new Response(
+      new ReadableStream({ start(c) { c.error(new Error('socket reset')); } }),
+      { status: 200, headers: { 'Content-Type': 'application/json' } }
+    );
+    fetchMock.mockResolvedValueOnce(broken);
+    const result = await call('gorelo_list_tickets');
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).not.toMatch(/"ok":true/);
+    expect(textOf(result)).toMatch(/HTTP 200 but the response body could not be read: socket reset/);
+  });
+
   it('403 names the tool and points at API key scopes', async () => {
     fetchMock.mockResolvedValueOnce(json({}, 403));
     const result = await call('gorelo_list_tickets');
