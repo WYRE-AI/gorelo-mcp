@@ -1,6 +1,6 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { ListToolsRequestSchema, CallToolRequestSchema } from '@modelcontextprotocol/sdk/types.js';
-import { ALL_TOOLS, dispatchToolCall } from './tools/index.js';
+import { dispatchToolCall, listTools } from './tools/index.js';
 import { logger } from './utils/logger.js';
 
 export function createServer(): Server {
@@ -9,7 +9,7 @@ export function createServer(): Server {
     { capabilities: { tools: {}, logging: {} } }
   );
 
-  server.setRequestHandler(ListToolsRequestSchema, async () => ({ tools: ALL_TOOLS }));
+  server.setRequestHandler(ListToolsRequestSchema, async () => ({ tools: listTools() }));
 
   server.setRequestHandler(CallToolRequestSchema, async (request) => {
     const { name, arguments: args } = request.params;

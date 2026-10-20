@@ -5,9 +5,18 @@ import {
   GoreloAuthError,
   GoreloForbiddenError,
   GoreloRateLimitError,
-  getClient,
-  listTickets,
 } from '../client.js';
+import { executeTool } from '../executor.js';
+import { GENERATED_TOOLS } from '../generated/tools.js';
+import type { GeneratedTool } from '../tool-types.js';
+
+function tool(name: string): GeneratedTool {
+  const found = GENERATED_TOOLS.find((t) => t.name === name);
+  if (!found) throw new Error(`no tool ${name}`);
+  return found;
+}
+const getClient = (creds: { apiKey: string; region?: 'us' | 'au' }, id: number) =>
+  executeTool(tool('gorelo_get_client'), { id }, creds);
 
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
@@ -37,7 +46,7 @@ describe('GET requests', () => {
   it('sends the API key as X-API-Key and uses the region-specific host', async () => {
     fetchMock.mockResolvedValueOnce(jsonResponse({ IsSuccess: true, Data: { Id: 1, Name: 'Acme' } }));
 
-    const result = await getClient({ apiKey: 'key-1', region: 'au' }, 1);
+    const result = JSON.parse(await getClient({ apiKey: 'key-1', region: 'au' }, 1));
 
     expect(result.Data?.Name).toBe('Acme');
     expect(fetchMock).toHaveBeenCalledTimes(1);
@@ -49,7 +58,7 @@ describe('GET requests', () => {
   it('joins array filter values with commas and drops undefined entries', async () => {
     fetchMock.mockResolvedValueOnce(jsonResponse({ IsSuccess: true, Data: [] }));
 
-    await listTickets({ apiKey: 'key-1' }, { statusIds: [1, 2, 3], clientIds: undefined });
+    await executeTool(tool('gorelo_list_tickets'), { statusIds: [1, 2, 3], clientIds: undefined }, { apiKey: 'key-1' });
 
     const [url] = fetchMock.mock.calls[0];
     const parsed = new URL(url as string);
@@ -67,8 +76,8 @@ describe('GET requests', () => {
     await expect(getClient({ apiKey: 'key-1' }, 1)).rejects.toThrow(GoreloForbiddenError);
   });
 
-  it('throws GoreloRateLimitError on HTTP 429', async () => {
-    fetchMock.mockResolvedValueOnce(jsonResponse({}, 429));
+  it('throws GoreloRateLimitError on HTTP 429 once retries are exhausted', async () => {
+    fetchMock.mockImplementation(async () => new Response('{}', { status: 429, headers: { 'Retry-After': '0' } }));
     await expect(getClient({ apiKey: 'key-1' }, 1)).rejects.toThrow(GoreloRateLimitError);
   });
 

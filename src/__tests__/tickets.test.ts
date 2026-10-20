@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { handleTicketTool } from '../tools/tickets.js';
+import { dispatchToolCall as handleTicketTool } from '../tools/index.js';
 import { textOf } from './test-helpers.js';
 
 function jsonResponse(body: unknown, status = 200): Response {
@@ -101,7 +101,7 @@ describe('handleTicketTool', () => {
   it('gorelo_get_ticket_comment requires ticketId and commentId', async () => {
     const result = await handleTicketTool('gorelo_get_ticket_comment', { ticketId: 't1' });
     expect(result.isError).toBe(true);
-    expect(textOf(result)).toMatch(/ticketId and commentId are required/);
+    expect(textOf(result)).toMatch(/commentId is required/);
   });
 
   it('gorelo_get_ticket_comment fetches a single comment', async () => {
@@ -126,7 +126,7 @@ describe('handleTicketTool', () => {
   it('gorelo_get_ticket_approval requires ticketId and approvalId', async () => {
     const result = await handleTicketTool('gorelo_get_ticket_approval', { ticketId: 't1' });
     expect(result.isError).toBe(true);
-    expect(textOf(result)).toMatch(/ticketId and approvalId are required/);
+    expect(textOf(result)).toMatch(/approvalId is required/);
   });
 
   it('gorelo_get_ticket_approval fetches a single approval', async () => {
@@ -146,6 +146,6 @@ describe('handleTicketTool', () => {
   it('returns an error for an unknown ticket tool name', async () => {
     const result = await handleTicketTool('gorelo_not_a_real_tool', {});
     expect(result.isError).toBe(true);
-    expect(textOf(result)).toMatch(/Unknown ticket tool/);
+    expect(textOf(result)).toMatch(/Unknown tool/);
   });
 });
