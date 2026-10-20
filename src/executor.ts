@@ -120,7 +120,7 @@ function failure(tool: GeneratedTool, status: number, text: string): Error {
       return new GoreloAuthError('Gorelo rejected the API key (HTTP 401). Check the key and region.');
     case 403:
       return new GoreloForbiddenError(
-        `Gorelo API key lacks permission for ${tool.name} (HTTP 403). Check the key's scopes in Gorelo → Settings → API.`
+        `The Gorelo API key for this connection doesn't have permission to run ${tool.name} (HTTP 403). An admin can check the key's permissions in Gorelo under Settings → Integrations.`
       );
     case 404:
       return new GoreloApiError(`Not found (HTTP 404) for ${tool.name}: the id does not exist or is not visible to this key${suffix}`, 404);

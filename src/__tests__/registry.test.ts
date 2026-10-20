@@ -74,7 +74,7 @@ describe('billing writes', () => {
   it('are refused at call time unless enabled, without calling Gorelo', async () => {
     const result = await dispatchToolCall('gorelo_create_invoice', { body: {} }, {});
     expect(result.isError).toBe(true);
-    expect(JSON.stringify(result)).toMatch(/GORELO_ENABLE_BILLING_WRITES/);
+    expect(JSON.stringify(result)).toMatch(/is turned off\. Changing invoices, payments and catalog items is off by default for this connection\./);
     const readonly = await dispatchToolCall('gorelo_create_payment', { body: {} }, { GORELO_PRESET: 'readonly', GORELO_ENABLE_BILLING_WRITES: 'true' });
     expect(readonly.isError).toBe(true);
   });
@@ -111,12 +111,12 @@ describe('dispatch gating', () => {
   it('refuses a destructive tool by name when the flag is off, without calling Gorelo', async () => {
     const result = await dispatchToolCall('gorelo_delete_ticket', { ticketId: 't1' }, {});
     expect(result.isError).toBe(true);
-    expect(JSON.stringify(result)).toMatch(/GORELO_ENABLE_DESTRUCTIVE/);
+    expect(JSON.stringify(result)).toMatch(/is turned off\. Deleting Gorelo records is off by default for this connection\./);
   });
 
   it('refuses write tools under the readonly preset', async () => {
     const result = await dispatchToolCall('gorelo_create_ticket', { body: {} }, { GORELO_PRESET: 'readonly' });
     expect(result.isError).toBe(true);
-    expect(JSON.stringify(result)).toMatch(/disabled/);
+    expect(JSON.stringify(result)).toMatch(/isn't turned on for this connection\./);
   });
 });

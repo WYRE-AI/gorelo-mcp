@@ -7,7 +7,7 @@ import type { GeneratedTool } from '../tool-types.js';
 export const GENERATED_TOOLS: GeneratedTool[] = [
   {
     "name": "gorelo_list_alerts",
-    "description": "Lists alerts for the authenticated service provider.",
+    "description": "Lists alerts in Gorelo across all your clients.",
     "method": "GET",
     "path": "/v1/alerts",
     "tag": "Alerts",
@@ -123,7 +123,7 @@ export const GENERATED_TOOLS: GeneratedTool[] = [
   },
   {
     "name": "gorelo_create_alert",
-    "description": "Posts an external alert against a client for the service provider.",
+    "description": "Raises a new alert against one of your clients in Gorelo, such as an alert from an outside monitoring tool.",
     "method": "POST",
     "path": "/v1/alerts",
     "tag": "Alerts",
@@ -289,7 +289,7 @@ export const GENERATED_TOOLS: GeneratedTool[] = [
   },
   {
     "name": "gorelo_delete_asset",
-    "description": "Deletes an agent (managed device) asset.",
+    "description": "Deletes a managed device (agent asset) from Gorelo. This is destructive and can't be undone from Conduit.",
     "method": "DELETE",
     "path": "/v1/assets/agents/{deviceId}",
     "tag": "Assets",
@@ -446,7 +446,7 @@ export const GENERATED_TOOLS: GeneratedTool[] = [
   },
   {
     "name": "gorelo_create_custom_asset",
-    "description": "Creates a custom asset.",
+    "description": "Creates a custom asset, meaning a device without the Gorelo agent, such as a printer or firewall. Use gorelo_list_custom_asset_hardware_types for valid hardware types.",
     "method": "POST",
     "path": "/v1/assets/custom",
     "tag": "Assets",
@@ -509,7 +509,7 @@ export const GENERATED_TOOLS: GeneratedTool[] = [
   },
   {
     "name": "gorelo_delete_custom_asset",
-    "description": "Deletes a custom asset.",
+    "description": "Deletes a custom asset from Gorelo. This is destructive and can't be undone from Conduit.",
     "method": "DELETE",
     "path": "/v1/assets/custom/{customAssetId}",
     "tag": "Assets",
@@ -661,7 +661,7 @@ export const GENERATED_TOOLS: GeneratedTool[] = [
     "hasBody": false
   },
   {
-    "name": "gorelo_list_uptimes",
+    "name": "gorelo_list_uptime_checks",
     "description": "Lists uptime checks for the service provider using cursor pagination. Results are sorted by createdOn descending (newest first).",
     "method": "GET",
     "path": "/v1/uptime",
@@ -746,8 +746,8 @@ export const GENERATED_TOOLS: GeneratedTool[] = [
     "hasBody": false
   },
   {
-    "name": "gorelo_create_uptime",
-    "description": "Creates an uptime check.",
+    "name": "gorelo_create_uptime_check",
+    "description": "Creates an uptime check that pings a host, requests a web address or connects to a TCP port on a schedule.",
     "method": "POST",
     "path": "/v1/uptime",
     "tag": "Assets",
@@ -834,8 +834,8 @@ export const GENERATED_TOOLS: GeneratedTool[] = [
     "hasBody": true
   },
   {
-    "name": "gorelo_delete_uptime",
-    "description": "Deletes an uptime check.",
+    "name": "gorelo_delete_uptime_check",
+    "description": "Deletes an uptime check, which stops that monitoring. This is destructive and can't be undone from Conduit.",
     "method": "DELETE",
     "path": "/v1/uptime/{checkId}",
     "tag": "Assets",
@@ -865,7 +865,7 @@ export const GENERATED_TOOLS: GeneratedTool[] = [
     "hasBody": false
   },
   {
-    "name": "gorelo_get_uptime",
+    "name": "gorelo_get_uptime_check",
     "description": "Gets a single uptime check by id.",
     "method": "GET",
     "path": "/v1/uptime/{checkId}",
@@ -896,7 +896,7 @@ export const GENERATED_TOOLS: GeneratedTool[] = [
     "hasBody": false
   },
   {
-    "name": "gorelo_update_uptime",
+    "name": "gorelo_update_uptime_check",
     "description": "Updates an uptime check. Send only the fields you want to change.",
     "method": "PATCH",
     "path": "/v1/uptime/{checkId}",
@@ -1098,7 +1098,7 @@ export const GENERATED_TOOLS: GeneratedTool[] = [
   },
   {
     "name": "gorelo_delete_contract",
-    "description": "Deletes a contract.",
+    "description": "Deletes a billing contract from Gorelo. This is destructive and can't be undone from Conduit.",
     "method": "DELETE",
     "path": "/v1/contracts/{contractId}",
     "tag": "Billing",
@@ -1129,7 +1129,7 @@ export const GENERATED_TOOLS: GeneratedTool[] = [
   },
   {
     "name": "gorelo_get_contract",
-    "description": "Everything about one contract, including each service line's actual products/labor.",
+    "description": "Gets one contract, including the products and labor in each service line.",
     "method": "GET",
     "path": "/v1/contracts/{contractId}",
     "tag": "Billing",
@@ -1454,7 +1454,7 @@ export const GENERATED_TOOLS: GeneratedTool[] = [
   },
   {
     "name": "gorelo_delete_invoice",
-    "description": "Deletes or voids an invoice, depending on its current status.",
+    "description": "Deletes or voids an invoice, depending on its status. This is destructive and can't be undone from Conduit.",
     "method": "DELETE",
     "path": "/v1/invoices/{invoiceId}",
     "tag": "Billing",
@@ -1821,7 +1821,7 @@ export const GENERATED_TOOLS: GeneratedTool[] = [
   },
   {
     "name": "gorelo_delete_item",
-    "description": "Deletes an item.",
+    "description": "Deletes a product or bundle from the item catalog. This is destructive and can't be undone from Conduit.",
     "method": "DELETE",
     "path": "/v1/items/{itemId}",
     "tag": "Billing",
@@ -1852,7 +1852,7 @@ export const GENERATED_TOOLS: GeneratedTool[] = [
   },
   {
     "name": "gorelo_get_item",
-    "description": "A single catalog item — a product or a bundle.",
+    "description": "Gets one catalog item (a product or a bundle) by ID.",
     "method": "GET",
     "path": "/v1/items/{itemId}",
     "tag": "Billing",
@@ -2076,7 +2076,7 @@ export const GENERATED_TOOLS: GeneratedTool[] = [
   },
   {
     "name": "gorelo_delete_payment",
-    "description": "Deletes a payment that was recorded through the API.",
+    "description": "Deletes a payment that was recorded through the Gorelo API, for example with gorelo_create_payment. This is destructive and can't be undone from Conduit.",
     "method": "DELETE",
     "path": "/v1/payments/{paymentId}",
     "tag": "Billing",
@@ -2387,7 +2387,7 @@ export const GENERATED_TOOLS: GeneratedTool[] = [
   },
   {
     "name": "gorelo_delete_time_entry",
-    "description": "Deletes a time entry.",
+    "description": "Deletes a logged time entry. This is destructive and can't be undone from Conduit.",
     "method": "DELETE",
     "path": "/v1/time-entries/{timeEntryId}",
     "tag": "Billing",
@@ -2743,7 +2743,7 @@ export const GENERATED_TOOLS: GeneratedTool[] = [
   },
   {
     "name": "gorelo_delete_client",
-    "description": "Deletes a client.",
+    "description": "Deletes a client from Gorelo. This is destructive and can't be undone from Conduit.",
     "method": "DELETE",
     "path": "/v1/clients/{clientId}",
     "tag": "Clients",
@@ -3118,7 +3118,7 @@ export const GENERATED_TOOLS: GeneratedTool[] = [
   },
   {
     "name": "gorelo_delete_contact",
-    "description": "Deletes a contact.",
+    "description": "Deletes a contact from Gorelo. This is destructive and can't be undone from Conduit.",
     "method": "DELETE",
     "path": "/v1/contacts/{contactId}",
     "tag": "Contacts",
@@ -3180,7 +3180,7 @@ export const GENERATED_TOOLS: GeneratedTool[] = [
   },
   {
     "name": "gorelo_update_contact",
-    "description": "Updates an existing contact.",
+    "description": "Updates a contact. Send only the fields you want to change.",
     "method": "PATCH",
     "path": "/v1/contacts/{contactId}",
     "tag": "Contacts",
@@ -3517,7 +3517,7 @@ export const GENERATED_TOOLS: GeneratedTool[] = [
   },
   {
     "name": "gorelo_create_document",
-    "description": "Creates a document.",
+    "description": "Creates a document with an HTML body, either for a client or for internal use, optionally nested under another document.",
     "method": "POST",
     "path": "/v1/documents",
     "tag": "Documents",
@@ -3591,7 +3591,7 @@ export const GENERATED_TOOLS: GeneratedTool[] = [
   },
   {
     "name": "gorelo_update_document",
-    "description": "Updates a document.",
+    "description": "Updates a document's title, body or placement. Send only the fields you want to change.",
     "method": "PATCH",
     "path": "/v1/documents/{documentId}",
     "tag": "Documents",
@@ -3689,7 +3689,7 @@ export const GENERATED_TOOLS: GeneratedTool[] = [
   },
   {
     "name": "gorelo_duplicate_document",
-    "description": "Duplicates a document.",
+    "description": "Makes a copy of a document as a new document.",
     "method": "POST",
     "path": "/v1/documents/{documentId}/duplicate",
     "tag": "Documents",
@@ -4155,7 +4155,7 @@ export const GENERATED_TOOLS: GeneratedTool[] = [
   },
   {
     "name": "gorelo_create_form_submission_link",
-    "description": "Issues a link through which the form can be submitted.",
+    "description": "Creates a link someone can use to fill in and submit this form.",
     "method": "POST",
     "path": "/v1/forms/{formId}/submission-links",
     "tag": "Forms",
@@ -4201,7 +4201,7 @@ export const GENERATED_TOOLS: GeneratedTool[] = [
   },
   {
     "name": "gorelo_list_api_keys",
-    "description": "Lists the service provider's API keys using cursor pagination, newest first.",
+    "description": "Lists your Gorelo API keys, newest first. Shows names and details only, never the key values.",
     "method": "GET",
     "path": "/v1/api-keys",
     "tag": "Organization",
@@ -4305,7 +4305,7 @@ export const GENERATED_TOOLS: GeneratedTool[] = [
   },
   {
     "name": "gorelo_list_projects",
-    "description": "Lists the projects visible to the authenticated service provider, newest activity first.",
+    "description": "Lists projects, newest activity first.",
     "method": "GET",
     "path": "/v1/projects",
     "tag": "Projects",
@@ -4501,7 +4501,7 @@ export const GENERATED_TOOLS: GeneratedTool[] = [
   },
   {
     "name": "gorelo_create_project",
-    "description": "Creates a project for the authenticated service provider.",
+    "description": "Creates a project in Gorelo.",
     "method": "POST",
     "path": "/v1/projects",
     "tag": "Projects",
@@ -4600,7 +4600,7 @@ export const GENERATED_TOOLS: GeneratedTool[] = [
   },
   {
     "name": "gorelo_delete_project",
-    "description": "Deletes a project and every task in it.",
+    "description": "Deletes a project and every task in it. This is destructive and can't be undone from Conduit.",
     "method": "DELETE",
     "path": "/v1/projects/{projectId}",
     "tag": "Projects",
@@ -4913,7 +4913,7 @@ export const GENERATED_TOOLS: GeneratedTool[] = [
   },
   {
     "name": "gorelo_delete_project_comment",
-    "description": "Deletes one comment on a project.",
+    "description": "Deletes one comment on a project. This is destructive and can't be undone from Conduit.",
     "method": "DELETE",
     "path": "/v1/projects/{projectId}/comments/{commentId}",
     "tag": "Projects",
@@ -5079,7 +5079,7 @@ export const GENERATED_TOOLS: GeneratedTool[] = [
   },
   {
     "name": "gorelo_delete_project_section",
-    "description": "Deletes a section and every task in it.",
+    "description": "Deletes a project section and every task in it. This is destructive and can't be undone from Conduit.",
     "method": "DELETE",
     "path": "/v1/projects/{projectId}/sections/{sectionId}",
     "tag": "Projects",
@@ -5418,7 +5418,7 @@ export const GENERATED_TOOLS: GeneratedTool[] = [
   },
   {
     "name": "gorelo_delete_project_task",
-    "description": "Deletes a task.",
+    "description": "Deletes a project task. This is destructive and can't be undone from Conduit.",
     "method": "DELETE",
     "path": "/v1/projects/{projectId}/tasks/{taskId}",
     "tag": "Projects",
@@ -5876,7 +5876,7 @@ export const GENERATED_TOOLS: GeneratedTool[] = [
   },
   {
     "name": "gorelo_delete_project_task_comment",
-    "description": "Deletes one comment on a task.",
+    "description": "Deletes one comment on a task. This is destructive and can't be undone from Conduit.",
     "method": "DELETE",
     "path": "/v1/projects/{projectId}/tasks/{taskId}/comments/{commentId}",
     "tag": "Projects",
@@ -6386,7 +6386,7 @@ export const GENERATED_TOOLS: GeneratedTool[] = [
   },
   {
     "name": "gorelo_create_ticket",
-    "description": "Creates a ticket for the authenticated service provider.",
+    "description": "Creates a ticket in Gorelo.",
     "method": "POST",
     "path": "/v1/tickets",
     "tag": "Tickets",
@@ -6549,7 +6549,7 @@ export const GENERATED_TOOLS: GeneratedTool[] = [
   },
   {
     "name": "gorelo_delete_ticket",
-    "description": "Deletes a ticket and its time entries.",
+    "description": "Deletes a ticket and its time entries. This is destructive and can't be undone from Conduit.",
     "method": "DELETE",
     "path": "/v1/tickets/{ticketId}",
     "tag": "Tickets",
@@ -6907,7 +6907,7 @@ export const GENERATED_TOOLS: GeneratedTool[] = [
   },
   {
     "name": "gorelo_create_ticket_comment",
-    "description": "Adds a comment to a ticket. The comment is always recorded as coming from the API — the caller cannot post as a specific user, and To and Cc are taken from the conversation rather than the request.",
+    "description": "Adds a comment to a ticket. Gorelo shows it as posted by the API, not by you, and To and Cc come from the ticket's conversation.",
     "method": "POST",
     "path": "/v1/tickets/{ticketId}/comments",
     "tag": "Tickets",
@@ -6987,7 +6987,7 @@ export const GENERATED_TOOLS: GeneratedTool[] = [
   },
   {
     "name": "gorelo_delete_ticket_comment",
-    "description": "Deletes a private comment from a ticket.",
+    "description": "Deletes a private comment from a ticket. This is destructive and can't be undone from Conduit.",
     "method": "DELETE",
     "path": "/v1/tickets/{ticketId}/comments/{commentId}",
     "tag": "Tickets",

@@ -91,7 +91,7 @@ describe('errors', () => {
     fetchMock.mockResolvedValueOnce(json({}, 403));
     const result = await call('gorelo_list_tickets');
     expect(textOf(result)).toBe(
-      "Error: Gorelo API key lacks permission for gorelo_list_tickets (HTTP 403). Check the key's scopes in Gorelo → Settings → API."
+      "Error: The Gorelo API key for this connection doesn't have permission to run gorelo_list_tickets (HTTP 403). An admin can check the key's permissions in Gorelo under Settings → Integrations."
     );
   });
 

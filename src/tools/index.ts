@@ -30,10 +30,10 @@ export async function dispatchToolCall(
   if (!selectTools(env).some((t) => t.name === name)) {
     return errorResult(
       tool.tier === 'destructive' && !destructiveEnabled(env)
-        ? `Tool ${name} is disabled: destructive tools require GORELO_ENABLE_DESTRUCTIVE=true.`
+        ? `${name} is turned off. Deleting Gorelo records is off by default for this connection.`
         : tool.billingWrite && !billingWritesEnabled(env)
-        ? `Tool ${name} is disabled: billing writes require GORELO_ENABLE_BILLING_WRITES=true.`
-        : `Tool ${name} is disabled by GORELO_PRESET / GORELO_TOOLS_INCLUDE / GORELO_TOOLS_EXCLUDE.`
+        ? `${name} is turned off. Changing invoices, payments and catalog items is off by default for this connection.`
+        : `${name} isn't turned on for this connection.`
     );
   }
   try {

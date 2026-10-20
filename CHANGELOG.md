@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `X-Gorelo-Region` accepts only `us` or `au`. Any other value returns 400 and is not sent to a regional API host.
 
 ### Changed
+- Uptime tools are renamed to `gorelo_{list_uptime_checks,get_uptime_check,create_uptime_check,update_uptime_check,delete_uptime_check}`.
+- Reviewed tool descriptions live in `DESCRIPTION_OVERRIDES` in `scripts/generate-tools.mjs`. Every delete tool says it is destructive. Disabled-tool and 403 error messages are reworded.
 - Credential minting is never exposed: `POST /v1/api-keys` and `DELETE /v1/api-keys/{apiKeyId}` (`gorelo_create_api_key`, `gorelo_delete_api_key`) are excluded by the generator (`EXCLUDED_SENSITIVE`). `gorelo_list_api_keys` is kept; it returns no secret material.
 - Money is read-only by default: `gorelo_create_invoice`, `gorelo_create_payment`, `gorelo_create_item`, `gorelo_update_item` are listed and callable only with `GORELO_ENABLE_BILLING_WRITES=true` (default off), enforced at listing and call time. Time entry create/update are unaffected.
 

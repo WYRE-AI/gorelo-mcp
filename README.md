@@ -62,8 +62,8 @@ Request bodies are passed under a single `body` argument (the JSON object Gorelo
 
 | Tool | Tier | Description |
 |---|---|---|
-| `gorelo_list_alerts` | read | Lists alerts for the authenticated service provider. |
-| `gorelo_create_alert` | write | Posts an external alert against a client for the service provider. |
+| `gorelo_list_alerts` | read | Lists alerts in Gorelo across all your clients. |
+| `gorelo_create_alert` | write | Raises a new alert against one of your clients in Gorelo, such as an alert from an outside monitoring tool. |
 
 ### Assets
 
@@ -71,26 +71,26 @@ Request bodies are passed under a single `body` argument (the JSON object Gorelo
 |---|---|---|
 | `gorelo_get_asset` | read | Gets a single agent (managed device) asset by id. |
 | `gorelo_get_custom_asset` | read | Gets a single custom asset by id. |
-| `gorelo_get_uptime` | read | Gets a single uptime check by id. |
+| `gorelo_get_uptime_check` | read | Gets a single uptime check by id. |
 | `gorelo_list_assets` | read | Lists agent (managed device) assets for the service provider using cursor pagination. Results are sorted by createdOn descending (newest first). |
 | `gorelo_list_custom_asset_hardware_types` | read | Lists the hardware types a custom asset can be given. |
 | `gorelo_list_custom_assets` | read | Lists custom (non-agent) assets for the service provider using cursor pagination. Results are sorted by createdOn descending (newest first). |
-| `gorelo_list_uptimes` | read | Lists uptime checks for the service provider using cursor pagination. Results are sorted by createdOn descending (newest first). |
-| `gorelo_create_custom_asset` | write | Creates a custom asset. |
-| `gorelo_create_uptime` | write | Creates an uptime check. |
+| `gorelo_list_uptime_checks` | read | Lists uptime checks for the service provider using cursor pagination. Results are sorted by createdOn descending (newest first). |
+| `gorelo_create_custom_asset` | write | Creates a custom asset, meaning a device without the Gorelo agent, such as a printer or firewall. Use gorelo_list_custom_asset_hardware_types for valid hardware types. |
+| `gorelo_create_uptime_check` | write | Creates an uptime check that pings a host, requests a web address or connects to a TCP port on a schedule. |
 | `gorelo_update_custom_asset` | write | Updates a custom asset. Send only the fields you want to change. |
-| `gorelo_update_uptime` | write | Updates an uptime check. Send only the fields you want to change. |
-| `gorelo_delete_asset` | destructive | Deletes an agent (managed device) asset. |
-| `gorelo_delete_custom_asset` | destructive | Deletes a custom asset. |
-| `gorelo_delete_uptime` | destructive | Deletes an uptime check. |
+| `gorelo_update_uptime_check` | write | Updates an uptime check. Send only the fields you want to change. |
+| `gorelo_delete_asset` | destructive | Deletes a managed device (agent asset) from Gorelo. This is destructive and can't be undone from Conduit. |
+| `gorelo_delete_custom_asset` | destructive | Deletes a custom asset from Gorelo. This is destructive and can't be undone from Conduit. |
+| `gorelo_delete_uptime_check` | destructive | Deletes an uptime check, which stops that monitoring. This is destructive and can't be undone from Conduit. |
 
 ### Billing
 
 | Tool | Tier | Description |
 |---|---|---|
-| `gorelo_get_contract` | read | Everything about one contract, including each service line's actual products/labor. |
+| `gorelo_get_contract` | read | Gets one contract, including the products and labor in each service line. |
 | `gorelo_get_invoice` | read | Gets one invoice, with its attachments and line items. |
-| `gorelo_get_item` | read | A single catalog item — a product or a bundle. |
+| `gorelo_get_item` | read | Gets one catalog item (a product or a bundle) by ID. |
 | `gorelo_get_time_entry` | read | Gets a single time entry by id. |
 | `gorelo_list_billing_roles` | read | Lists the billing roles configured for the service provider. Use a role's Id as BillingRoleId when logging time against a ticket. |
 | `gorelo_list_contracts` | read | Lists billing contracts, each with the service lines it is made of. |
@@ -106,11 +106,11 @@ Request bodies are passed under a single `body` argument (the JSON object Gorelo
 | `gorelo_create_time_entry` | write | Logs time against a ticket. |
 | `gorelo_update_item` | write (admin, billing) | Partially updates an item. Send only the fields you want to change. |
 | `gorelo_update_time_entry` | write | Partially updates a time entry. Send only the fields you want to change. |
-| `gorelo_delete_contract` | destructive | Deletes a contract. |
-| `gorelo_delete_invoice` | destructive | Deletes or voids an invoice, depending on its current status. |
-| `gorelo_delete_item` | destructive | Deletes an item. |
-| `gorelo_delete_payment` | destructive | Deletes a payment that was recorded through the API. |
-| `gorelo_delete_time_entry` | destructive | Deletes a time entry. |
+| `gorelo_delete_contract` | destructive | Deletes a billing contract from Gorelo. This is destructive and can't be undone from Conduit. |
+| `gorelo_delete_invoice` | destructive | Deletes or voids an invoice, depending on its status. This is destructive and can't be undone from Conduit. |
+| `gorelo_delete_item` | destructive | Deletes a product or bundle from the item catalog. This is destructive and can't be undone from Conduit. |
+| `gorelo_delete_payment` | destructive | Deletes a payment that was recorded through the Gorelo API, for example with gorelo_create_payment. This is destructive and can't be undone from Conduit. |
+| `gorelo_delete_time_entry` | destructive | Deletes a logged time entry. This is destructive and can't be undone from Conduit. |
 
 ### Clients
 
@@ -121,7 +121,7 @@ Request bodies are passed under a single `body` argument (the JSON object Gorelo
 | `gorelo_list_clients` | read | Lists clients for the service provider using cursor pagination. Results are sorted by client id ascending (oldest first). |
 | `gorelo_create_client` | write (admin) | Creates a client (and its default location) for the service provider. |
 | `gorelo_update_client` | write (admin) | Updates an existing client. Only supplied (non-null) fields are changed. |
-| `gorelo_delete_client` | destructive | Deletes a client. |
+| `gorelo_delete_client` | destructive | Deletes a client from Gorelo. This is destructive and can't be undone from Conduit. |
 
 ### Contacts
 
@@ -130,8 +130,8 @@ Request bodies are passed under a single `body` argument (the JSON object Gorelo
 | `gorelo_get_contact` | read | Gets a single contact by id. |
 | `gorelo_list_contacts` | read | Lists contacts for the service provider using cursor pagination, optionally filtered by client. Results are sorted by contact id ascending (oldest first). |
 | `gorelo_create_contact` | write (admin) | Creates a contact under a client, or a temporary contact when no client is given. |
-| `gorelo_update_contact` | write (admin) | Updates an existing contact. |
-| `gorelo_delete_contact` | destructive | Deletes a contact. |
+| `gorelo_update_contact` | write (admin) | Updates a contact. Send only the fields you want to change. |
+| `gorelo_delete_contact` | destructive | Deletes a contact from Gorelo. This is destructive and can't be undone from Conduit. |
 
 ### Deletions
 
@@ -148,11 +148,11 @@ Request bodies are passed under a single `body` argument (the JSON object Gorelo
 | `gorelo_list_document_related_items` | read | Lists the records a document is related to. |
 | `gorelo_list_document_versions` | read | Lists a document's versions, newest first. |
 | `gorelo_list_documents` | read | Lists the service provider's documents. |
-| `gorelo_create_document` | write | Creates a document. |
+| `gorelo_create_document` | write | Creates a document with an HTML body, either for a client or for internal use, optionally nested under another document. |
 | `gorelo_create_document_related_item` | write | Relates a document to other records. |
-| `gorelo_duplicate_document` | write | Duplicates a document. |
+| `gorelo_duplicate_document` | write | Makes a copy of a document as a new document. |
 | `gorelo_restore_document_version` | write | Makes an earlier version the current one. |
-| `gorelo_update_document` | write | Updates a document. |
+| `gorelo_update_document` | write | Updates a document's title, body or placement. Send only the fields you want to change. |
 | `gorelo_delete_document_related_item` | destructive | Removes one related item from a document. |
 
 ### Forms
@@ -161,13 +161,13 @@ Request bodies are passed under a single `body` argument (the JSON object Gorelo
 |---|---|---|
 | `gorelo_list_form_responses` | read | Lists a form's submitted responses, newest first. |
 | `gorelo_list_forms` | read | Lists the service provider's forms, most recently updated first. |
-| `gorelo_create_form_submission_link` | write | Issues a link through which the form can be submitted. |
+| `gorelo_create_form_submission_link` | write | Creates a link someone can use to fill in and submit this form. |
 
 ### Organization
 
 | Tool | Tier | Description |
 |---|---|---|
-| `gorelo_list_api_keys` | read | Lists the service provider's API keys using cursor pagination, newest first. |
+| `gorelo_list_api_keys` | read | Lists your Gorelo API keys, newest first. Shows names and details only, never the key values. |
 | `gorelo_list_groups` | read | Lists the technician groups configured for the service provider. |
 | `gorelo_list_users` | read | Lists users (technicians) for the service provider using cursor pagination. Results are sorted by user id ascending (oldest first). |
 
@@ -187,8 +187,8 @@ Request bodies are passed under a single `body` argument (the JSON object Gorelo
 | `gorelo_list_project_task_conversations` | read | Lists the conversations on a task. |
 | `gorelo_list_project_tasks` | read | Lists a project's tasks. |
 | `gorelo_list_project_types` | read | Lists the project types configured for the service provider. |
-| `gorelo_list_projects` | read | Lists the projects visible to the authenticated service provider, newest activity first. |
-| `gorelo_create_project` | write | Creates a project for the authenticated service provider. |
+| `gorelo_list_projects` | read | Lists projects, newest activity first. |
+| `gorelo_create_project` | write | Creates a project in Gorelo. |
 | `gorelo_create_project_comment` | write | Posts a comment on a project. |
 | `gorelo_create_project_section` | write | Adds a section to a project. |
 | `gorelo_create_project_task` | write | Creates a task on a project's board. |
@@ -198,11 +198,11 @@ Request bodies are passed under a single `body` argument (the JSON object Gorelo
 | `gorelo_update_project` | write | Updates a project. Send only the fields you want to change. |
 | `gorelo_update_project_section` | write | Updates a section's title or colour. Send only the fields you want to change. |
 | `gorelo_update_project_task` | write | Updates a task. Send only the fields you want to change. |
-| `gorelo_delete_project` | destructive | Deletes a project and every task in it. |
-| `gorelo_delete_project_comment` | destructive | Deletes one comment on a project. |
-| `gorelo_delete_project_section` | destructive | Deletes a section and every task in it. |
-| `gorelo_delete_project_task` | destructive | Deletes a task. |
-| `gorelo_delete_project_task_comment` | destructive | Deletes one comment on a task. |
+| `gorelo_delete_project` | destructive | Deletes a project and every task in it. This is destructive and can't be undone from Conduit. |
+| `gorelo_delete_project_comment` | destructive | Deletes one comment on a project. This is destructive and can't be undone from Conduit. |
+| `gorelo_delete_project_section` | destructive | Deletes a project section and every task in it. This is destructive and can't be undone from Conduit. |
+| `gorelo_delete_project_task` | destructive | Deletes a project task. This is destructive and can't be undone from Conduit. |
+| `gorelo_delete_project_task_comment` | destructive | Deletes one comment on a task. This is destructive and can't be undone from Conduit. |
 
 ### Tickets
 
@@ -217,13 +217,13 @@ Request bodies are passed under a single `body` argument (the JSON object Gorelo
 | `gorelo_list_ticket_tags` | read | Lists the ticket tags configured for the service provider. |
 | `gorelo_list_ticket_types` | read | Lists the ticket types configured for the service provider. |
 | `gorelo_list_tickets` | read | Lists tickets for the service provider using cursor pagination. Default sort is updatedOn desc. |
-| `gorelo_create_ticket` | write | Creates a ticket for the authenticated service provider. |
+| `gorelo_create_ticket` | write | Creates a ticket in Gorelo. |
 | `gorelo_create_ticket_approval` | write | Creates an approval on a ticket. Every listed contact starts Pending. |
-| `gorelo_create_ticket_comment` | write | Adds a comment to a ticket. The comment is always recorded as coming from the API — the caller cannot post as a specific user, and To and Cc are taken from the conversation rather than the request. |
+| `gorelo_create_ticket_comment` | write | Adds a comment to a ticket. Gorelo shows it as posted by the API, not by you, and To and Cc come from the ticket's conversation. |
 | `gorelo_create_ticket_side_conversation` | write | Creates a side conversation on a ticket. Post a comment into it afterward using this conversation's returned Id as conversationId with conversationType=3. |
 | `gorelo_update_ticket` | write | Partially updates a ticket. Send only the fields you want to change. |
-| `gorelo_delete_ticket` | destructive | Deletes a ticket and its time entries. |
-| `gorelo_delete_ticket_comment` | destructive | Deletes a private comment from a ticket. |
+| `gorelo_delete_ticket` | destructive | Deletes a ticket and its time entries. This is destructive and can't be undone from Conduit. |
+| `gorelo_delete_ticket_comment` | destructive | Deletes a private comment from a ticket. This is destructive and can't be undone from Conduit. |
 
 ### tools/list size
 
@@ -268,7 +268,7 @@ Two more are never exposed under any configuration: `POST /v1/api-keys` and `DEL
 - One generic executor runs every tool: path parameters are URL-encoded, the host is always the region's fixed base URL (`us` / `au`), and redirects are refused.
 - HTTP 429 is retried up to 3 times (honoring `Retry-After`, capped at 15s, else exponential backoff).
 - Responses over 100KB are truncated with an explicit `[TRUNCATED: ...]` marker; narrow with filters or `pageSize` and follow the cursor.
-- 403 returns `Gorelo API key lacks permission for <tool> (HTTP 403). Check the key's scopes in Gorelo → Settings → API.` 401, 404 and 422 have their own messages. The API key is never included in errors or logs.
+- 403 returns `The Gorelo API key for this connection doesn't have permission to run <tool> (HTTP 403). An admin can check the key's permissions in Gorelo under Settings → Integrations.` 401, 404 and 422 have their own messages. The API key is never included in errors or logs.
 
 ### Regenerating
 

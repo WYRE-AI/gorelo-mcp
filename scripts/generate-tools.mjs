@@ -76,11 +76,53 @@ const LEGACY = {
   'GET /v1/organization/groups': { name: 'gorelo_list_groups' },
 };
 
+/**
+ * Reviewed tool descriptions (copy review, 2026-10-20), keyed by final tool name.
+ * They replace the spec summary. Every key must match a generated tool.
+ */
+const DESCRIPTION_OVERRIDES = {
+  gorelo_delete_asset: "Deletes a managed device (agent asset) from Gorelo. This is destructive and can't be undone from Conduit.",
+  gorelo_delete_custom_asset: "Deletes a custom asset from Gorelo. This is destructive and can't be undone from Conduit.",
+  gorelo_delete_uptime_check: "Deletes an uptime check, which stops that monitoring. This is destructive and can't be undone from Conduit.",
+  gorelo_delete_contract: "Deletes a billing contract from Gorelo. This is destructive and can't be undone from Conduit.",
+  gorelo_delete_invoice: "Deletes or voids an invoice, depending on its status. This is destructive and can't be undone from Conduit.",
+  gorelo_delete_item: "Deletes a product or bundle from the item catalog. This is destructive and can't be undone from Conduit.",
+  gorelo_delete_payment: "Deletes a payment that was recorded through the Gorelo API, for example with gorelo_create_payment. This is destructive and can't be undone from Conduit.",
+  gorelo_delete_time_entry: "Deletes a logged time entry. This is destructive and can't be undone from Conduit.",
+  gorelo_delete_client: "Deletes a client from Gorelo. This is destructive and can't be undone from Conduit.",
+  gorelo_delete_contact: "Deletes a contact from Gorelo. This is destructive and can't be undone from Conduit.",
+  gorelo_delete_project: "Deletes a project and every task in it. This is destructive and can't be undone from Conduit.",
+  gorelo_delete_project_comment: "Deletes one comment on a project. This is destructive and can't be undone from Conduit.",
+  gorelo_delete_project_section: "Deletes a project section and every task in it. This is destructive and can't be undone from Conduit.",
+  gorelo_delete_project_task: "Deletes a project task. This is destructive and can't be undone from Conduit.",
+  gorelo_delete_project_task_comment: "Deletes one comment on a task. This is destructive and can't be undone from Conduit.",
+  gorelo_delete_ticket: "Deletes a ticket and its time entries. This is destructive and can't be undone from Conduit.",
+  gorelo_delete_ticket_comment: "Deletes a private comment from a ticket. This is destructive and can't be undone from Conduit.",
+  gorelo_list_alerts: "Lists alerts in Gorelo across all your clients.",
+  gorelo_create_alert: "Raises a new alert against one of your clients in Gorelo, such as an alert from an outside monitoring tool.",
+  gorelo_create_custom_asset: "Creates a custom asset, meaning a device without the Gorelo agent, such as a printer or firewall. Use gorelo_list_custom_asset_hardware_types for valid hardware types.",
+  gorelo_create_uptime_check: "Creates an uptime check that pings a host, requests a web address or connects to a TCP port on a schedule.",
+  gorelo_get_contract: "Gets one contract, including the products and labor in each service line.",
+  gorelo_get_item: "Gets one catalog item (a product or a bundle) by ID.",
+  gorelo_update_contact: "Updates a contact. Send only the fields you want to change.",
+  gorelo_create_document: "Creates a document with an HTML body, either for a client or for internal use, optionally nested under another document.",
+  gorelo_update_document: "Updates a document's title, body or placement. Send only the fields you want to change.",
+  gorelo_duplicate_document: "Makes a copy of a document as a new document.",
+  gorelo_create_form_submission_link: "Creates a link someone can use to fill in and submit this form.",
+  gorelo_list_api_keys: "Lists your Gorelo API keys, newest first. Shows names and details only, never the key values.",
+  gorelo_list_projects: "Lists projects, newest activity first.",
+  gorelo_create_project: "Creates a project in Gorelo.",
+  gorelo_create_ticket: "Creates a ticket in Gorelo.",
+  gorelo_create_ticket_comment: "Adds a comment to a ticket. Gorelo shows it as posted by the API, not by you, and To and Cc come from the ticket's conversation.",
+};
+const MAX_OVERRIDE_DESC = 300;
+
 /** Path prefixes rewritten to a noun before naming. */
 const SEGMENT_ALIASES = [
   ['assets/agents', 'asset'],
   ['assets/custom', 'custom_asset'],
   ['organization/', ''],
+  ['uptime', 'uptime_check'],
 ];
 
 /** Trailing path segments that name an action rather than a resource. */
@@ -292,7 +334,7 @@ function buildTools() {
       const tags = op.tags ?? [];
       tools.push({
         name,
-        description: sentences(op.summary ?? '', MAX_DESC),
+        description: DESCRIPTION_OVERRIDES[name] ?? sentences(op.summary ?? '', MAX_DESC),
         method,
         path,
         tag: tags[0] ?? 'Other',
@@ -314,11 +356,20 @@ function buildTools() {
     if (!tools.some((t) => `${t.method} ${t.path}` === key)) throw new Error(`Legacy mapping ${key} is not in the spec`);
   }
 
+  for (const key of Object.keys(DESCRIPTION_OVERRIDES)) {
+    if (!tools.some((t) => t.name === key)) throw new Error(`Description override ${key} matches no generated tool`);
+  }
+  for (const t of tools) {
+    if (t.tier === 'destructive' && t.name !== 'gorelo_delete_document_related_item' && !DESCRIPTION_OVERRIDES[t.name]) {
+      throw new Error(`Destructive tool ${t.name} needs a reviewed description in DESCRIPTION_OVERRIDES`);
+    }
+  }
+
   const names = new Map();
   for (const t of tools) {
     if (names.has(t.name)) throw new Error(`Duplicate tool name ${t.name}: ${names.get(t.name)} vs ${t.method} ${t.path}`);
     if (!/^gorelo_[a-z0-9_]+$/.test(t.name)) throw new Error(`Bad tool name ${t.name}`);
-    if (t.description.length > MAX_DESC + 1) throw new Error(`Description too long for ${t.name}`);
+    if (t.description.length > (DESCRIPTION_OVERRIDES[t.name] ? MAX_OVERRIDE_DESC : MAX_DESC + 1)) throw new Error(`Description too long for ${t.name}`);
     names.set(t.name, `${t.method} ${t.path}`);
   }
   tools.sort((a, b) => (a.tag === b.tag ? a.path.localeCompare(b.path) || a.method.localeCompare(b.method) : a.tag.localeCompare(b.tag)));
