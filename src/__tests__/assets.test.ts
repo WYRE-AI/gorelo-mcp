@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { handleAssetTool } from '../tools/assets.js';
+import { dispatchToolCall as handleAssetTool } from '../tools/index.js';
 import { textOf } from './test-helpers.js';
 
 function jsonResponse(body: unknown, status = 200): Response {
@@ -63,6 +63,6 @@ describe('handleAssetTool', () => {
   it('returns an error for an unknown asset tool name', async () => {
     const result = await handleAssetTool('gorelo_not_a_real_tool', {});
     expect(result.isError).toBe(true);
-    expect(textOf(result)).toMatch(/Unknown asset tool/);
+    expect(textOf(result)).toMatch(/Unknown tool/);
   });
 });

@@ -1,7 +1,7 @@
 {
   "name": "@wyre-ai/gorelo-mcp",
   "version": "0.1.0",
-  "description": "MCP server for Gorelo's PSA REST API - ticket, client, contact, contract, asset, and time-tracking visibility",
+  "description": "MCP server for Gorelo's PSA REST API - full Public API coverage (tickets, clients, contacts, assets, billing, projects, documents, alerts), generated from the OpenAPI spec",
   "type": "module",
   "main": "./dist/index.js",
   "bin": {
@@ -14,6 +14,8 @@
   "homepage": "https://github.com/WYRE-AI/gorelo-mcp",
   "scripts": {
     "build": "tsup",
+    "generate": "node scripts/generate-tools.mjs",
+    "generate:check": "node scripts/generate-tools.mjs --check",
     "prebuild": "npm run clean",
     "dev": "tsup --watch",
     "start": "node dist/index.js",

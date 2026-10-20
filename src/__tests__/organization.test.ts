@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { handleOrganizationTool } from '../tools/organization.js';
+import { dispatchToolCall as handleOrganizationTool } from '../tools/index.js';
 import { textOf } from './test-helpers.js';
 
 function jsonResponse(body: unknown, status = 200): Response {
@@ -48,6 +48,6 @@ describe('handleOrganizationTool', () => {
   it('returns an error for an unknown organization tool name', async () => {
     const result = await handleOrganizationTool('gorelo_not_a_real_tool', {});
     expect(result.isError).toBe(true);
-    expect(textOf(result)).toMatch(/Unknown organization tool/);
+    expect(textOf(result)).toMatch(/Unknown tool/);
   });
 });

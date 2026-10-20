@@ -2,6 +2,7 @@ import { createServer as createHttpServer, type Server as HttpServer } from 'nod
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { createServer } from './server.js';
 import { runWithCredentials } from './client.js';
+import { selectTools } from './tools/index.js';
 import { logger } from './utils/logger.js';
 import { verifyS2sHeader, S2S_HEADER } from './s2s-verify.js';
 import type { GoreloRegion } from './types.js';
@@ -118,6 +119,7 @@ function resolveListenHost(s2sSecret: string): string {
 
 export async function startHttpServer(): Promise<HttpServer> {
   const s2sSecret = resolveS2sSecret();
+  selectTools(); // fail fast on a bad GORELO_PRESET / filter config
   const port = parseInt(process.env.MCP_HTTP_PORT || '8080', 10);
   const host = resolveListenHost(s2sSecret);
   const isGatewayMode = process.env.AUTH_MODE === 'gateway';

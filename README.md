@@ -1,6 +1,6 @@
 # Gorelo MCP Server
 
-MCP server for [Gorelo](https://gorelo.io)'s PSA (Professional Services Automation) REST API - ticket, client, contact, contract, asset, and time-tracking visibility - for AI assistants and the WYRE Conduit gateway.
+MCP server for [Gorelo](https://gorelo.io)'s PSA (Professional Services Automation) REST API - full Public API coverage (tickets, clients, contacts, assets, billing, projects, documents, alerts, and more) - for AI assistants and the WYRE Conduit gateway.
 
 ## Authentication
 
@@ -20,6 +20,7 @@ Copy [`.env.example`](.env.example) and set the variables below.
 | `MCP_ALLOW_INSECURE_DEV` | Set to exactly `1` only for local development to start HTTP without `CONDUIT_S2S_SECRET`. The process logs a warning, does not enforce `X-Gateway-S2S`, and binds `127.0.0.1` only. A non-loopback `MCP_HTTP_HOST` is overridden and logged. A placeholder secret still refuses to start. |
 | `MCP_HTTP_HOST` | Bind address when a secret is configured. Unset means `0.0.0.0`. The container image sets `0.0.0.0`. Ignored in favor of `127.0.0.1` when there is no secret. |
 | `MCP_HTTP_PORT` | HTTP port. Defaults to `8080`. |
+| `GORELO_PRESET`, `GORELO_ENABLE_DESTRUCTIVE`, `GORELO_ENABLE_BILLING_WRITES`, `GORELO_TOOLS_INCLUDE`, `GORELO_TOOLS_EXCLUDE` | Tool selection; see [Tool selection](#tool-selection). |
 | `LOG_LEVEL` | `debug` \| `info` (default) \| `warn` \| `error`. |
 
 `/health` stays unauthenticated, does not call `getCredentials()`, and does not return the API key. The stdio transport does not use `CONDUIT_S2S_SECRET`.
@@ -39,54 +40,254 @@ X-Gorelo-Region: us
 
 ## Tools
 
-### Tickets
-- `gorelo_list_tickets` - list tickets, filterable by status/client/priority/type/assignee/contact/tag/group/keyword/date range.
-- `gorelo_get_ticket` - get a single ticket's full detail.
-- `gorelo_list_ticket_statuses` - list configured ticket statuses.
-- `gorelo_list_ticket_tags` - list configured ticket tags.
-- `gorelo_list_ticket_types` - list configured ticket types.
-- `gorelo_list_ticket_comments` - list comments on a ticket.
-- `gorelo_get_ticket_comment` - get a single comment on a ticket.
-- `gorelo_list_ticket_conversations` - list a ticket's main thread, side conversations, and approvals.
-- `gorelo_get_ticket_approval` - get a single approval's status and approvers.
+112 tools, generated at build time from Gorelo's OpenAPI spec (`spec/gorelo-openapi.json`, fetched 2026-10-20: 117 operations, 5 excluded). Names follow `gorelo_<verb>_<noun>`. The 24 read tools from earlier releases keep their names; their arguments are unchanged (camelCase filters such as `pageSize`/`statusIds` as arrays, and `id` for the `get_client`/`get_contact`/`get_asset`/`get_time_entry` tools).
 
-### Clients
-- `gorelo_list_clients` - list clients.
-- `gorelo_get_client` - get a single client.
-- `gorelo_list_client_locations` - list a client's locations.
+Tiers follow the HTTP method:
 
-### Contacts
-- `gorelo_list_contacts` - list contacts, optionally filtered by client.
-- `gorelo_get_contact` - get a single contact.
+| Tier | Methods | Count | Annotations | Default |
+|---|---|---|---|---|
+| read | GET | 58 | `readOnlyHint: true` | on |
+| write | POST / PUT / PATCH | 36 | `readOnlyHint: false`, `destructiveHint: false` | on (the gateway gates writes), except billing writes (below) |
+| destructive | DELETE | 18 | `readOnlyHint: false`, `destructiveHint: true` | **off**; set `GORELO_ENABLE_DESTRUCTIVE=true` |
 
-### Contracts
-- `gorelo_list_contracts` - list billing contracts and their service lines.
+Write tools marked *admin* create or change clients, contacts, the item catalog, invoices or payments.
+
+Money is read-only by default: the four billing writes (`gorelo_create_invoice`, `gorelo_create_payment`, `gorelo_create_item`, `gorelo_update_item`; every non-DELETE write under the Billing tag except time entries) are hidden from `tools/list` and refused at call time unless `GORELO_ENABLE_BILLING_WRITES=true`. The `readonly` preset hides them regardless. Billing DELETEs are ordinary destructive tools. Time entry create/update are unaffected.
+
+The machine-readable classification (`read` / `write` / `destructive` / `admin` / `billing_write` / `excluded_binary` / `excluded_sensitive`) comes from `node scripts/generate-tools.mjs --tiers <file>`.
+
+Request bodies are passed under a single `body` argument (the JSON object Gorelo documents for that endpoint). Multi-value filters (`statusIds`, `clientIds`, ...) take an array, which is sent comma-joined.
+
+### Alerts
+
+| Tool | Tier | Description |
+|---|---|---|
+| `gorelo_list_alerts` | read | Lists alerts in Gorelo across all your clients. |
+| `gorelo_create_alert` | write | Raises a new alert against one of your clients in Gorelo, such as an alert from an outside monitoring tool. |
 
 ### Assets
-- `gorelo_list_assets` - list agent (managed device) assets.
-- `gorelo_get_asset` - get a single agent asset.
-- `gorelo_list_custom_assets` - list custom (non-agent) assets.
 
-### Time Tracking
-- `gorelo_list_time_entries` - list logged time across tickets and tasks.
-- `gorelo_get_time_entry` - get a single time entry.
-- `gorelo_list_billing_roles` - list configured billing roles.
-- `gorelo_list_work_types` - list configured work types.
+| Tool | Tier | Description |
+|---|---|---|
+| `gorelo_get_asset` | read | Gets a single agent (managed device) asset by id. |
+| `gorelo_get_custom_asset` | read | Gets a single custom asset by id. |
+| `gorelo_get_uptime_check` | read | Gets a single uptime check by id. |
+| `gorelo_list_assets` | read | Lists agent (managed device) assets for the service provider using cursor pagination. Results are sorted by createdOn descending (newest first). |
+| `gorelo_list_custom_asset_hardware_types` | read | Lists the hardware types a custom asset can be given. |
+| `gorelo_list_custom_assets` | read | Lists custom (non-agent) assets for the service provider using cursor pagination. Results are sorted by createdOn descending (newest first). |
+| `gorelo_list_uptime_checks` | read | Lists uptime checks for the service provider using cursor pagination. Results are sorted by createdOn descending (newest first). |
+| `gorelo_create_custom_asset` | write | Creates a custom asset, meaning a device without the Gorelo agent, such as a printer or firewall. Use gorelo_list_custom_asset_hardware_types for valid hardware types. |
+| `gorelo_create_uptime_check` | write | Creates an uptime check that pings a host, requests a web address or connects to a TCP port on a schedule. |
+| `gorelo_update_custom_asset` | write | Updates a custom asset. Send only the fields you want to change. |
+| `gorelo_update_uptime_check` | write | Updates an uptime check. Send only the fields you want to change. |
+| `gorelo_delete_asset` | destructive | Deletes a managed device (agent asset) from Gorelo. This is destructive and can't be undone from Conduit. |
+| `gorelo_delete_custom_asset` | destructive | Deletes a custom asset from Gorelo. This is destructive and can't be undone from Conduit. |
+| `gorelo_delete_uptime_check` | destructive | Deletes an uptime check, which stops that monitoring. This is destructive and can't be undone from Conduit. |
+
+### Billing
+
+| Tool | Tier | Description |
+|---|---|---|
+| `gorelo_get_contract` | read | Gets one contract, including the products and labor in each service line. |
+| `gorelo_get_invoice` | read | Gets one invoice, with its attachments and line items. |
+| `gorelo_get_item` | read | Gets one catalog item (a product or a bundle) by ID. |
+| `gorelo_get_time_entry` | read | Gets a single time entry by id. |
+| `gorelo_list_billing_roles` | read | Lists the billing roles configured for the service provider. Use a role's Id as BillingRoleId when logging time against a ticket. |
+| `gorelo_list_contracts` | read | Lists billing contracts, each with the service lines it is made of. |
+| `gorelo_list_invoices` | read | Lists the service provider's invoices, filtered and sorted. |
+| `gorelo_list_item_categories` | read | Lists the categories products are organised under, each with its subcategories. |
+| `gorelo_list_items` | read | Lists the service provider's item catalog: products and bundles. |
+| `gorelo_list_taxes` | read | Lists the tax rates configured for the service provider. |
+| `gorelo_list_time_entries` | read | Lists logged time across every ticket and task, narrowed by any of the filters. |
+| `gorelo_list_work_types` | read | Lists the work types configured for the service provider. Use a work type's Id as WorkTypeId when logging time against a ticket. |
+| `gorelo_create_invoice` | write (admin, billing) | Raises a manual invoice against a client, with line items. |
+| `gorelo_create_item` | write (admin, billing) | Creates a product or a bundle in the item catalog. |
+| `gorelo_create_payment` | write (admin, billing) | Records a payment received outside Gorelo against an approved invoice. |
+| `gorelo_create_time_entry` | write | Logs time against a ticket. |
+| `gorelo_update_item` | write (admin, billing) | Partially updates an item. Send only the fields you want to change. |
+| `gorelo_update_time_entry` | write | Partially updates a time entry. Send only the fields you want to change. |
+| `gorelo_delete_contract` | destructive | Deletes a billing contract from Gorelo. This is destructive and can't be undone from Conduit. |
+| `gorelo_delete_invoice` | destructive | Deletes or voids an invoice, depending on its status. This is destructive and can't be undone from Conduit. |
+| `gorelo_delete_item` | destructive | Deletes a product or bundle from the item catalog. This is destructive and can't be undone from Conduit. |
+| `gorelo_delete_payment` | destructive | Deletes a payment that was recorded through the Gorelo API, for example with gorelo_create_payment. This is destructive and can't be undone from Conduit. |
+| `gorelo_delete_time_entry` | destructive | Deletes a logged time entry. This is destructive and can't be undone from Conduit. |
+
+### Clients
+
+| Tool | Tier | Description |
+|---|---|---|
+| `gorelo_get_client` | read | Gets a single client by id. |
+| `gorelo_list_client_locations` | read | Lists the locations for a given client. |
+| `gorelo_list_clients` | read | Lists clients for the service provider using cursor pagination. Results are sorted by client id ascending (oldest first). |
+| `gorelo_create_client` | write (admin) | Creates a client (and its default location) for the service provider. |
+| `gorelo_update_client` | write (admin) | Updates an existing client. Only supplied (non-null) fields are changed. |
+| `gorelo_delete_client` | destructive | Deletes a client from Gorelo. This is destructive and can't be undone from Conduit. |
+
+### Contacts
+
+| Tool | Tier | Description |
+|---|---|---|
+| `gorelo_get_contact` | read | Gets a single contact by id. |
+| `gorelo_list_contacts` | read | Lists contacts for the service provider using cursor pagination, optionally filtered by client. Results are sorted by contact id ascending (oldest first). |
+| `gorelo_create_contact` | write (admin) | Creates a contact under a client, or a temporary contact when no client is given. |
+| `gorelo_update_contact` | write (admin) | Updates a contact. Send only the fields you want to change. |
+| `gorelo_delete_contact` | destructive | Deletes a contact from Gorelo. This is destructive and can't be undone from Conduit. |
+
+### Deletions
+
+| Tool | Tier | Description |
+|---|---|---|
+| `gorelo_list_deletions` | read | Lists records that have been deleted, so a copy kept in sync through this API can remove them. Results are sorted by DeletedOn ascending, then type id, then id, using cursor pagination. |
+
+### Documents
+
+| Tool | Tier | Description |
+|---|---|---|
+| `gorelo_get_document` | read | Gets a single document. |
+| `gorelo_get_document_version` | read | Gets one version of a document, with its body and attachments. |
+| `gorelo_list_document_related_items` | read | Lists the records a document is related to. |
+| `gorelo_list_document_versions` | read | Lists a document's versions, newest first. |
+| `gorelo_list_documents` | read | Lists the service provider's documents. |
+| `gorelo_create_document` | write | Creates a document with an HTML body, either for a client or for internal use, optionally nested under another document. |
+| `gorelo_create_document_related_item` | write | Relates a document to other records. |
+| `gorelo_duplicate_document` | write | Makes a copy of a document as a new document. |
+| `gorelo_restore_document_version` | write | Makes an earlier version the current one. |
+| `gorelo_update_document` | write | Updates a document's title, body or placement. Send only the fields you want to change. |
+| `gorelo_delete_document_related_item` | destructive | Removes one related item from a document. |
+
+### Forms
+
+| Tool | Tier | Description |
+|---|---|---|
+| `gorelo_list_form_responses` | read | Lists a form's submitted responses, newest first. |
+| `gorelo_list_forms` | read | Lists the service provider's forms, most recently updated first. |
+| `gorelo_create_form_submission_link` | write | Creates a link someone can use to fill in and submit this form. |
 
 ### Organization
-- `gorelo_list_users` - list users (technicians).
-- `gorelo_list_groups` - list technician groups.
 
-## Scope
+| Tool | Tier | Description |
+|---|---|---|
+| `gorelo_list_api_keys` | read | Lists your Gorelo API keys, newest first. Shows names and details only, never the key values. |
+| `gorelo_list_groups` | read | Lists the technician groups configured for the service provider. |
+| `gorelo_list_users` | read | Lists users (technicians) for the service provider using cursor pagination. Results are sorted by user id ascending (oldest first). |
 
-This is a v1 read-only surface: every tool is a `GET` against Gorelo's Public API. Every write action (creating or updating tickets/comments/clients/contacts/time entries, posting external alerts, uploading attachments, and all delete endpoints) is out of scope for this release and can be added as a follow-up once there's a concrete need for it.
+### Projects
 
-`GET /v1/invoices/{id}/pdf` is also out of scope: it returns a binary PDF rather than JSON, and this wave's connectors treat binary report/document endpoints as a separate concern from structured data visibility.
+| Tool | Tier | Description |
+|---|---|---|
+| `gorelo_get_project` | read | Gets a single project. |
+| `gorelo_get_project_comment` | read | Returns one comment on a project. |
+| `gorelo_get_project_task` | read | Returns one task in full. |
+| `gorelo_get_project_task_approval` | read | Gets one approval on a task, with its approvers. |
+| `gorelo_get_project_task_comment` | read | Returns one comment on a task. |
+| `gorelo_list_project_comments` | read | Returns a project's comments, newest first. |
+| `gorelo_list_project_sections` | read | Lists a project's sections. |
+| `gorelo_list_project_tags` | read | Lists the project tags configured for the service provider. |
+| `gorelo_list_project_task_comments` | read | Returns a task's comments, newest first. |
+| `gorelo_list_project_task_conversations` | read | Lists the conversations on a task. |
+| `gorelo_list_project_tasks` | read | Lists a project's tasks. |
+| `gorelo_list_project_types` | read | Lists the project types configured for the service provider. |
+| `gorelo_list_projects` | read | Lists projects, newest activity first. |
+| `gorelo_create_project` | write | Creates a project in Gorelo. |
+| `gorelo_create_project_comment` | write | Posts a comment on a project. |
+| `gorelo_create_project_section` | write | Adds a section to a project. |
+| `gorelo_create_project_task` | write | Creates a task on a project's board. |
+| `gorelo_create_project_task_approval` | write | Asks contacts to approve something on a task. |
+| `gorelo_create_project_task_comment` | write | Posts a comment on a task. |
+| `gorelo_create_project_task_side_conversation` | write | Starts a side conversation on a task. |
+| `gorelo_update_project` | write | Updates a project. Send only the fields you want to change. |
+| `gorelo_update_project_section` | write | Updates a section's title or colour. Send only the fields you want to change. |
+| `gorelo_update_project_task` | write | Updates a task. Send only the fields you want to change. |
+| `gorelo_delete_project` | destructive | Deletes a project and every task in it. This is destructive and can't be undone from Conduit. |
+| `gorelo_delete_project_comment` | destructive | Deletes one comment on a project. This is destructive and can't be undone from Conduit. |
+| `gorelo_delete_project_section` | destructive | Deletes a project section and every task in it. This is destructive and can't be undone from Conduit. |
+| `gorelo_delete_project_task` | destructive | Deletes a project task. This is destructive and can't be undone from Conduit. |
+| `gorelo_delete_project_task_comment` | destructive | Deletes one comment on a task. This is destructive and can't be undone from Conduit. |
+
+### Tickets
+
+| Tool | Tier | Description |
+|---|---|---|
+| `gorelo_get_ticket` | read | Gets a single ticket. |
+| `gorelo_get_ticket_approval` | read | Gets a single approval on a ticket, with its approvers. This is where approval status lives — the conversations list stays lean and does not carry it. |
+| `gorelo_get_ticket_comment` | read | Gets a single comment on a ticket. Same shape as a comments-list item except that the full BodyHtml is always included, so there is no BodyTruncated field. |
+| `gorelo_list_ticket_comments` | read | Lists the comments on a ticket using cursor pagination. Comments read oldest-first by default, like a conversation top to bottom. |
+| `gorelo_list_ticket_conversations` | read | Lists the conversations on a ticket. |
+| `gorelo_list_ticket_statuses` | read | Lists the ticket statuses configured for the service provider. |
+| `gorelo_list_ticket_tags` | read | Lists the ticket tags configured for the service provider. |
+| `gorelo_list_ticket_types` | read | Lists the ticket types configured for the service provider. |
+| `gorelo_list_tickets` | read | Lists tickets for the service provider using cursor pagination. Default sort is updatedOn desc. |
+| `gorelo_create_ticket` | write | Creates a ticket in Gorelo. |
+| `gorelo_create_ticket_approval` | write | Creates an approval on a ticket. Every listed contact starts Pending. |
+| `gorelo_create_ticket_comment` | write | Adds a comment to a ticket. Gorelo shows it as posted by the API, not by you, and To and Cc come from the ticket's conversation. |
+| `gorelo_create_ticket_side_conversation` | write | Creates a side conversation on a ticket. Post a comment into it afterward using this conversation's returned Id as conversationId with conversationType=3. |
+| `gorelo_update_ticket` | write | Partially updates a ticket. Send only the fields you want to change. |
+| `gorelo_delete_ticket` | destructive | Deletes a ticket and its time entries. This is destructive and can't be undone from Conduit. |
+| `gorelo_delete_ticket_comment` | destructive | Deletes a private comment from a ticket. This is destructive and can't be undone from Conduit. |
+
+### tools/list size
+
+Measured as the JSON size of the `tools/list` result (names, descriptions, input schemas, annotations):
+
+| Configuration | Tools | Bytes |
+|---|---|---|
+| `GORELO_PRESET=readonly` | 58 | 39,718 |
+| default (read + write, no billing writes) | 90 | 87,530 |
+| `GORELO_ENABLE_DESTRUCTIVE=true` + `GORELO_ENABLE_BILLING_WRITES=true` (everything) | 112 | 102,064 |
+
+Use a preset or `GORELO_TOOLS_INCLUDE` to shrink the list for clients with tight context budgets.
+
+### Tool selection
+
+| Env var | Description |
+|---|---|
+| `GORELO_PRESET` | `all` (default: read + write), `readonly` (read only), `crm` (Clients, Contacts, Organization), `tickets` (Tickets, Contacts, Clients), `monitoring` (Alerts, Assets). Tag presets match any of an operation's OpenAPI tags. Unknown values refuse to start. |
+| `GORELO_ENABLE_DESTRUCTIVE` | `true` enables the DELETE tools. Anything else leaves them off. Presets and filters never enable them. |
+| `GORELO_ENABLE_BILLING_WRITES` | `true` enables invoice, payment and item create/update. Default off; presets and filters never enable them. |
+| `GORELO_TOOLS_INCLUDE` | Comma-separated name globs (`*`, `?`); keep only matching tools, e.g. `gorelo_*_ticket*,gorelo_list_clients`. |
+| `GORELO_TOOLS_EXCLUDE` | Comma-separated name globs; drop matching tools. |
+
+Presets and filters only narrow the set. A tool hidden from `tools/list` is also refused if called by name. Selection that leaves zero tools refuses to start.
+
+### Exclusions
+
+Five operations are deliberately not exposed. Three because the Conduit gateway has no confirmed binary tool-result or upload path:
+
+| Operation | Reason |
+|---|---|
+| `POST /v1/attachments` | multipart file upload |
+| `GET /v1/invoices/{invoiceId}/pdf` | returns a binary PDF |
+| `GET /v1/documents/{documentId}/pdf` | returns a binary PDF |
+
+The list lives in `EXCLUDED_BINARY` in `scripts/generate-tools.mjs`.
+
+Two more are never exposed under any configuration: `POST /v1/api-keys` and `DELETE /v1/api-keys/{apiKeyId}` (`EXCLUDED_SENSITIVE`; credential minting/revocation is out of scope for an AI tool surface). `gorelo_list_api_keys` stays: it returns key metadata only (id, name, scopes, dates), never the key value.
+
+### Behavior
+
+- One generic executor runs every tool: path parameters are URL-encoded, the host is always the region's fixed base URL (`us` / `au`), and redirects are refused.
+- HTTP 429 is retried up to 3 times (honoring `Retry-After`, capped at 15s, else exponential backoff).
+- Responses over 100KB are truncated with an explicit `[TRUNCATED: ...]` marker; narrow with filters or `pageSize` and follow the cursor.
+- 403 returns `The Gorelo API key for this connection doesn't have permission to run <tool> (HTTP 403). An admin can check the key's permissions in Gorelo under Settings → Integrations.` 401, 404 and 422 have their own messages. The API key is never included in errors or logs.
+
+### Regenerating
+
+```bash
+npm run generate         # rewrite src/generated/tools.ts from spec/gorelo-openapi.json
+npm run generate:check   # exit 1 if the committed file is stale (also enforced by a test and CI)
+```
+
+To pick up a new Gorelo API version, replace `spec/gorelo-openapi.json`, run `npm run generate`, review the diff (new operations need no code unless they use a body format other than JSON, which the generator rejects loudly), and commit both files.
+
+## Attribution
+
+The operation-to-tool approach, retry/backoff and size-guard logic are adapted from [peetinc/gorelo-mcp-all](https://github.com/peetinc/gorelo-mcp-all) (MIT, Copyright (c) 2026 peetinc). See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
 ## Development
 
 ```bash
 npm install
+npm run generate   # only after changing spec/gorelo-openapi.json
 npm run build
 npm test
 npm run lint   # tsc --noEmit

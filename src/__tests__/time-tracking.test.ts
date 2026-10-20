@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { handleTimeTrackingTool } from '../tools/time-tracking.js';
+import { dispatchToolCall as handleTimeTrackingTool } from '../tools/index.js';
 import { textOf } from './test-helpers.js';
 
 function jsonResponse(body: unknown, status = 200): Response {
@@ -71,6 +71,6 @@ describe('handleTimeTrackingTool', () => {
   it('returns an error for an unknown time-tracking tool name', async () => {
     const result = await handleTimeTrackingTool('gorelo_not_a_real_tool', {});
     expect(result.isError).toBe(true);
-    expect(textOf(result)).toMatch(/Unknown time-tracking tool/);
+    expect(textOf(result)).toMatch(/Unknown tool/);
   });
 });
