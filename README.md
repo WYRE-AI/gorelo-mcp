@@ -38,6 +38,13 @@ X-Gorelo-Api-Key: <tenant api key>
 X-Gorelo-Region: us
 ```
 
+### Request limits
+
+- HTTP request bodies are capped at 256 KiB (262144 bytes). After the `X-Gateway-S2S` check passes, a `Content-Length` above the cap returns 413 with a JSON-RPC error; bodies without `Content-Length` are capped by the MCP SDK transport. Unauthenticated requests still get 401 first.
+- `tools/call` arguments are capped at 10,000 elements (every array item and object key at any depth). Larger inputs return an `isError` tool result and are never dispatched.
+
+These limits address CVE-2026-111768 / GHSA-46jr-4wx8-v453 (memory exhaustion during validation) and GHSA-f897-62hf-6gxq (no request body / batch cap).
+
 ## Tools
 
 112 tools, generated at build time from Gorelo's OpenAPI spec (`spec/gorelo-openapi.json`, fetched 2026-10-20: 117 operations, 5 excluded). Names follow `gorelo_<verb>_<noun>`. The 24 read tools from earlier releases keep their names; their arguments are unchanged (camelCase filters such as `pageSize`/`statusIds` as arrays, and `id` for the `get_client`/`get_contact`/`get_asset`/`get_time_entry` tools).
