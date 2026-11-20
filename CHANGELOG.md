@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **The HTTP transport no longer exits on a malformed request (WYREAI-741).** The request
+  target was parsed against the client-supplied `Host` header, and a value that does not parse
+  (or a target such as `//`) threw inside the request listener before authentication. The
+  target is now parsed against a fixed base, so `Host` is no longer consulted, and a target
+  that still cannot be parsed gets a `400` JSON response while the server keeps running.
+
 ### Security
 - HTTP startup rejects an empty or known-placeholder `CONDUIT_S2S_SECRET`. `MCP_ALLOW_INSECURE_DEV=1` is the only bypass, skips `X-Gateway-S2S`, and binds `127.0.0.1` only.
 - `AUTH_MODE=gateway` requires `X-Gorelo-Api-Key` on each `/mcp` request and does not fall back to `GORELO_API_KEY`.
